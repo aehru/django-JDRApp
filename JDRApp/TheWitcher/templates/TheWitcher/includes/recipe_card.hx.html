@@ -1,0 +1,34 @@
+{% load common_tags %}
+<div id="recipe-card-{{ recipe.pk }}" class="card mb-3" style="max-width: 18rem;">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        {{ recipe.name }}
+        {% if character_pk %}
+        <form 
+            hx-post="{% url 'TheWitcher:use-recipe' character_pk=character_pk recipe_pk=recipe.pk %}"
+            hx-target="#recipe-card-{{ recipe.pk }}"
+            >
+            {% csrf_token %}
+            <button 
+                class="btn btn-primary"
+                >
+                <i class="fa-solid fa-flask"></i>
+            </button>
+        </form>
+        {%  endif %}
+    </div>
+    <div class="card-body">
+        <h5 class="card-title">
+            {{ recipe.item_crafted.name }}
+            {% if character_pk and crafted_items_inventory_quantities %}
+            <span class=""> x{{ crafted_items_inventory_quantities|dict_key:recipe.item_crafted.pk }}</span>
+            {% endif %}
+        </h5>
+        <ul 
+            class="card-text placeholder-wave"
+            hx-get="{% url 'TheWitcher:recipe-ingredient-list' recipe.pk %}"
+            hx-trigger="load delay:.5s">
+            <span class="placeholder col-1"></span>
+            <span class="placeholder col-10"></span>
+        </ul>
+    </div>
+</div>

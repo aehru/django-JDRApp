@@ -1,0 +1,9 @@
+{% if inventory %}
+<ul class="list-group">
+    {% for entry in inventory %}
+    <li class="list-group-item  d-flex justify-content-between align-items-start">{{ entry.item.name }} <span class="badge bg-secondary">{{ entry.quantity }}</span></li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No items are available.</p>
+{% endif %}

@@ -1,0 +1,10 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "default",
+            "database": "${workspaceFolder:django-jdr-thewitcher}/JDRApp/db.sqlite3"
+        }
+    ]
+}

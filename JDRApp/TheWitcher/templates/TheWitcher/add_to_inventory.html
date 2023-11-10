@@ -1,0 +1,22 @@
+{% extends "TheWitcher/base.html" %}
+{% load static %}
+{% load indexing_extra %}
+{% block body %}
+    <section class="container-sm">
+        <h1>Current</h1>
+        <div id="current" hx-get="{% url 'TheWitcher:character-inventory' character.pk %}" hx-trigger="load, character-inventory-refresh"></div>
+    </section>
+
+    <section class="container-md">
+        <h1>Add to Inventory</h1>
+        
+        <form id="form-inventory" hx-post="{% url 'TheWitcher:add-to-inventory' character.pk %}">
+            {% include 'TheWitcher/includes/add_to_inventory.hx.html' with ingredients=ingredients %}
+        </form>
+    </section>
+    <script>
+        document.getElementById("form-inventory").addEventListener("htmx:afterSwap", function (event) {
+            htmx.trigger("#current", "character-inventory-refresh");
+        });
+    </script>
+{% endblock %}

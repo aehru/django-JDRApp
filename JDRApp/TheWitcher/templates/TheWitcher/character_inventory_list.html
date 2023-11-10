@@ -1,0 +1,23 @@
+{% extends "TheWitcher/base.html" %}
+{% block body %}
+    <section class="container-sm">
+        <h1>Inventory</h1>
+        <div id="character-inventory-content" hx-get="{% url 'TheWitcher:character-inventory' character_pk %}" hx-trigger="character-inventory-refresh">
+            {% include 'TheWitcher/includes/character_inventory_list.hx.html' with inventory=inventory %}
+        </div>
+    </section>
+    
+    <section id="form-inventory" class="container-md mt-2" hx-get="{% url 'TheWitcher:add-to-inventory' character_pk %}">
+        <div class="text-center">
+            <button class="btn btn-outline-primary">
+                Add item to inventory <span class="mdi mdi-name"></span>
+            </button>
+        </div>
+    </section>
+    <script>
+        document.getElementById("form-inventory").addEventListener("htmx:afterSwap", function (event) {
+            console.log("refreshing inventory");
+            htmx.trigger("#character-inventory-content", "character-inventory-refresh");
+        });
+    </script>
+{% endblock %}

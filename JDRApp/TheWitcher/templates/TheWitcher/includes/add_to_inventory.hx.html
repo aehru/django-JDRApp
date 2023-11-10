@@ -1,0 +1,29 @@
+<form hx-post="{% url 'TheWitcher:add-to-inventory' character.pk %}">
+    {% csrf_token %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Ingredient</th>
+                <th>Quantity</th>
+                <th>Add</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ingredient in ingredients %}
+            <tr>
+                <td>{{ ingredient.name }}</td>
+                <td>
+                    <input type="number" name="quantity_{{ ingredient.pk }}" value="1" min="1" max="99" />
+                </td>
+                <td>
+                    <button 
+                    type="submit" 
+                    name="add_ingredient" 
+                    value="{{ ingredient.pk }}"
+                    class="btn btn-secondary">+</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</form>

@@ -1,0 +1,17 @@
+{% extends "TheWitcher/base.html" %}
+
+{% block title %}Création d'un personnage{% endblock %}
+
+{% block body %}
+    <h1>Création d'un personnage</h1>
+    <section>
+        <article class="container">
+            {{ form.errors }}
+            <form method="post">
+                {% csrf_token %}
+                {{ form }}
+                <button type="submit" class="btn btn-primary">Créer</button>
+            </form>
+        </article>
+    </section>
+{% endblock %}
