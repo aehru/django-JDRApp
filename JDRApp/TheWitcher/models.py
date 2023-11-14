@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from django.db import models
 from django.contrib.auth.models import User
+from django.db import transaction
 from dashboard.models import Character
 
 ALCHEMICAL_SUBSTANCE = (
@@ -97,35 +98,87 @@ class CraftRecipeIngredient(models.Model):
 
 
 class AlchemyRecipe(Recipe):
-    vitriol = models.PositiveIntegerField(default=0)
-    rebis = models.PositiveIntegerField(default=0)
-    caelum = models.PositiveIntegerField(default=0)
-    hydragenum = models.PositiveIntegerField(default=0)
-    vermillion = models.PositiveIntegerField(default=0)
-    sol = models.PositiveIntegerField(default=0)
-    fulgur = models.PositiveIntegerField(default=0)
-    aether = models.PositiveIntegerField(default=0)
-    quebrith = models.PositiveIntegerField(default=0)
+    """
+    AlchemyRecipes are used to make potions
+    """
+    substances = models.ManyToManyField(AlchemicalSubstance, through='AlchemyRecipeIngredient', related_name='substance_for_recipe')
 
-    def clean(self) -> None:
-        if self.vitriol + self.rebis + self.caelum + self.hydragenum + self.vermillion + self.sol + self.fulgur + self.aether + self.quebrith <= 0:
-            raise ValueError("The sum of all ingredients must be positive")
-        return super().clean()
+    # def clean(self) -> None:
+    #     if self.vitriol + self.rebis + self.caelum + self.hydragenum + self.vermillion + self.sol + self.fulgur + self.aether + self.quebrith <= 0:
+    #         raise ValueError("The sum of all ingredients must be positive")
+    #     return super().clean()
     
     def save(self) -> None:
         self.category = "formula"
         return super().save()
 
+
+class AlchemyRecipeIngredient(models.Model):
+    recipe = models.ForeignKey(AlchemyRecipe, on_delete=models.CASCADE)
+    substance = models.ForeignKey(AlchemicalSubstance, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+
+    def __str__(self) -> str:
+        return f"{self.quantity} {self.substance} in {self.recipe}"
+
+
+class Characteristic(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    tag = models.CharField(max_length=5, null=True)
+
+    def __str__(self) -> str:
+        return f"{self.tag}"
+
+
+class Skill(models.Model):
+    characteristic = models.ForeignKey(Characteristic, on_delete=models.CASCADE, null=True, blank=True)
+    name = models.CharField(max_length=50, unique=True)
+    
+    def __str__(self) -> str:
+        return f"{self.name}"
+
 class Character(Character):
-    reflex = models.PositiveIntegerField()
-    dexterity = models.PositiveIntegerField()
+    money = models.FloatField(default=0)
+
+    characteristics = models.ManyToManyField(Characteristic, through='CharacterCharacteristic', related_name='characteristic_for_character')
+    skills = models.ManyToManyField(Skill, through='CharacterSkill', related_name='skill_for_character')
 
     def __str__(self) -> str:
         return f"{self.player}'s '{self.name}' from {self.campaign}"
+    
+    def save(self) -> None:
+        # When saving a new Character we need to create all the CharacterCharacteristics and CharacterSkills
+        if not self.pk:
+            with transaction.atomic():
+                Char:Character = super().save()
+                characteristics = Characteristic.objects.all()
+                skills = Skill.objects.all()
+                for characteristic in characteristics:
+                    CharacterCharacteristic.objects.create(character=self, characteristic=characteristic)
+                for skill in skills:
+                    CharacterSkill.objects.create(character=self, skill=skill)
+            return Char
+        else:
+            return super().save()
 
 
 class CharacterCharacteristic(models.Model):
-    character = models.OneToOneField(Character, on_delete=models.CASCADE, primary_key=True)
+    character = models.ForeignKey(Character, on_delete=models.CASCADE)
+    characteristic = models.ForeignKey(Characteristic, on_delete=models.CASCADE)
+    
+    value = models.PositiveIntegerField(default=0)
+
+    def __str__(self) -> str:
+        return f"{self.characteristic.tag} | {self.value}"
+
+class CharacterSkill(models.Model):
+    character = models.ForeignKey(Character, on_delete=models.CASCADE)
+    skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
+
+    value = models.PositiveIntegerField(default=0)
+
+    def __str__(self) -> str:
+        return f"{self.skill.name} | {self.value}"
     
 
 class CharacterRecipe(models.Model):
@@ -144,9 +197,3 @@ class CharacterInventory(models.Model):
 
     def __str__(self):
         return f'{self.quantity} {self.item} in {self.character}\'s inventory'
-
-
-class ToastContent():
-    title: str
-    content: str
-    type: str

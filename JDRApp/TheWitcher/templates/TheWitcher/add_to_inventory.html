@@ -1,7 +1,7 @@
 {% extends "TheWitcher/base.html" %}
 {% load static %}
 {% load indexing_extra %}
-{% block body %}
+{% block content %}
     <section class="container-sm">
         <h1>Current</h1>
         <div id="current" hx-get="{% url 'TheWitcher:character-inventory' character.pk %}" hx-trigger="load, character-inventory-refresh"></div>

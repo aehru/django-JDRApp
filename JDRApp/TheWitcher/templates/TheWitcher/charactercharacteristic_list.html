@@ -1,0 +1,20 @@
+{% extends "TheWitcher/base.html" %}
+{% load static %}
+{% block content %}
+<section class="container-sm d-flex justify-content-center">
+    <div class="p-3">
+        {% for c in characteristics %}
+        {% if forloop.counter0 == 9 %}
+    </div>
+    <div class="p-3">
+        {% endif %}
+        <div class="input-group mb-3">
+            <span class="input-group-text">{{ c.characteristic.tag }}</span>
+            <input type="text" class="form-control readonly" size="1" maxlength="2" value="{{ c.value }}">
+        </div>
+        {% endfor %}
+    </div>
+</section>
+<section class="container-sm" hx-get="{% url 'TheWitcher:character-skill' character_pk %}" hx-trigger="load">
+</section>
+{% endblock %}

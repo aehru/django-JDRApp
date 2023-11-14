@@ -1,4 +1,8 @@
 <form hx-post="{% url 'TheWitcher:add-to-inventory' character.pk %}">
+    <div class="input-group mb-3">
+        <input type="text" class="form-control" placeholder="Recipient's username" aria-label="Recipient's username" aria-describedby="button-addon2">
+        <button class="btn btn-outline-secondary" type="button" id="button-addon2">search</button>
+    </div>
     {% csrf_token %}
     <table class="table table-striped">
         <thead>

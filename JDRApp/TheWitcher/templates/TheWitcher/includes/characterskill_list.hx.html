@@ -1,0 +1,38 @@
+{% load common_tags %}
+{% comment %} <style>
+    @media (min-width: 992px) {
+        .tab-content > .tab-pane {
+          display: block;
+        }
+        
+        .fade:not(.show) {
+          opacity: 1;
+        }
+        
+        #characteristic-nav {
+          display: none;
+        }
+      }
+</style>
+<nav class="row">
+    <div id="characteristic-nav" class="nav nav-pills" id="nav-tab" role="tablist">
+        <button class="nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-INT" type="button" role="tab" aria-controls="nav-INT" aria-selected="true">INT</button>
+        <button class="nav-link" id="nav-profile-tab" data-bs-toggle="tab" data-bs-target="#nav-DEX" type="button" role="tab" aria-controls="nav-DEX" aria-selected="false">DEX</button>
+        <button class="nav-link" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-TECH" type="button" role="tab" aria-controls="nav-TECH" aria-selected="false">TECH</button>
+        <button class="nav-link" id="nav-disabled-tab" data-bs-toggle="tab" data-bs-target="#nav-disabled" type="button" role="tab" aria-controls="nav-disabled" aria-selected="false" disabled>Disabled</button>
+    </div>
+</nav> {% endcomment %}
+<div class="row /*tab-content*/">
+    {% regroup skills by skill.characteristic as characteristic_list %}
+    {% for characteristic, character_skill_list in characteristic_list %}
+    <div id="nav-{{ characteristic.tag }}" class="p-3 col-md-3 tab-pane">
+        <h3>{{ characteristic.name }} - {{ character_characteristics|list_key:characteristic.pk }} <hr class="border-primary"></h3>
+        {% for char_skill in character_skill_list %}
+        <div class="input-group mb-3">
+            <span class="input-group-text">{{ char_skill.skill.name }}</span>
+            <input type="text" class="form-control readonly" size="2" value="{{ char_skill.value }}">
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>

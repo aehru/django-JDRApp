@@ -1,17 +1,17 @@
 from typing import Any
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView
 from django.views.generic.edit import FormView
 from .forms import InventoryAddForm, InventoryEditForm
-from .functions import is_htmx_request, add_to_character_inventory, remove_from_character_inventory
+from .functions import get_total_quantity_of_substance_in_character_inventory, is_htmx_request, add_to_character_inventory, remove_from_character_inventory, remove_substances_from_character_inventory
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
 from dashboard.models import Campaign
-from .models import AlchemyRecipe, Character, CharacterInventory, CharacterRecipe, Item, Recipe, CraftRecipe, CraftRecipeIngredient
+from .models import AlchemyRecipe, AlchemyRecipeIngredient, Character, CharacterCharacteristic, CharacterInventory, CharacterRecipe, CharacterSkill, Item, Recipe, CraftRecipe, CraftRecipeIngredient
 
 class CampaignCreateView(CreateView):
     model = Campaign
@@ -20,6 +20,11 @@ class CampaignCreateView(CreateView):
 class CharacterCreateView(CreateView):
     model = Character
     fields = ["name", "reflex", "dexterity"]
+
+
+class CharacterDetailView(DetailView):
+    model = Character
+    context_object_name = "character"
 
 class IngredientListView(ListView):
     model = Item
@@ -139,11 +144,42 @@ class CharacterRecipeDetailView(DetailView):
         crafted_items = {}
         R:Recipe = self.get_object()
         item_crafted:CharacterInventory = CharacterInventory.objects.filter(character=character_id, item=R.item_crafted).first()
-        crafted_items[item_crafted.pk] = item_crafted.quantity
+        crafted_items[R.item_crafted.pk] = item_crafted.quantity
         context["crafted_items_inventory_quantities"] = crafted_items
         context["character_pk"] = character_id
 
         return context
+
+
+class CharacterCharacteristicListView(ListView):
+    model = Character
+    template_name = "TheWitcher/charactercharacteristic_list.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["characteristics"] = CharacterCharacteristic.objects.filter(character=self.kwargs["pk"])
+        context["character_pk"] = self.kwargs["pk"]
+        return context
+
+
+class CharacterSkillListView(ListView):
+    model = Character
+    template_name = "TheWitcher/characterskill_list.html"
+    # context_object_name = "skills"
+
+    def get_template_names(self) -> list[str]:
+        if is_htmx_request(self.request):
+            return ["TheWitcher/includes/characterskill_list.hx.html"]
+        else:
+            return super().get_template_names()
+    
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["skills"] = CharacterSkill.objects.filter(character=self.kwargs["pk"])
+        fields = ["characteristic_id", "value"]
+        context["character_characteristics"] = CharacterCharacteristic.objects.filter(character=self.kwargs["pk"]).values_list(*fields)
+        return context
+
 
 class CraftRecipeIngredientListView(DetailView):
     """
@@ -172,7 +208,7 @@ class CraftRecipeIngredientListView(DetailView):
         context = super().get_context_data(**kwargs)
         r:Recipe = self.get_object()
         if r.category == "formula":
-            context["ingredients"] = None
+            context["ingredients"] = AlchemyRecipeIngredient.objects.filter(recipe=self.get_object())
         else:
             context["ingredients"] = CraftRecipeIngredient.objects.filter(recipe=self.get_object())
         
@@ -249,9 +285,19 @@ class UseRecipeView(FormView):
         if not CharacterRecipe.objects.filter(character=character_id, recipe=recipe_id).exists():
             raise ValueError(f"Can't use {recipe} : {character} doesn't know it")
 
-        #ToDo : it's different if it's a potion or an item
-        if recipe.category == "alchemy":
-            print("alchemy")
+        if recipe.category == "formula":
+            recipe_substances = AlchemyRecipeIngredient.objects.filter(recipe=recipe_id)
+            try:
+                with transaction.atomic():
+                    for s in recipe_substances:
+                        # qty:int = get_total_quantity_of_substance_in_character_inventory(character_id, s.id)
+                        # if qty < 1:
+                        #     raise ValueError(f"Can't use {recipe} : {character} doesn't have {s}")
+                        remove_substances_from_character_inventory(character_id, s.substance, s.quantity)
+                    add_to_character_inventory(character, recipe.item_crafted, 1)
+            except:
+                msg:str = f"Can't use {recipe} : not enough {s} in stock"
+                raise ValueError(msg)
         else:
             recipe_ingredients = CraftRecipeIngredient.objects.filter(recipe=recipe_id)
             errors = []
@@ -269,14 +315,9 @@ class UseRecipeView(FormView):
                     
                     add_to_character_inventory(character, recipe.item_crafted, 1)
             except ValueError as e:
-                # return a toast template ?
-                # r = redirect(request.path)
-                if is_htmx_request(request):
-                    # r = JsonResponse({"toast": {"title": "Success", "content": f"{recipe} successfully used", "type": "success"}})
-                    return render(request, "TheWitcher/includes/toast.hx.html", {"title": "Success", "content": f"{recipe} successfully used", "type": "success"})
-                else:
-                    return render(request, "TheWitcher/use_recipe.html", {"character": character, "recipe": recipe})
+                #ToDo properly
+                return redirect(request.path)
         
         # r["HX-Trigger"] = "character-inventory-refresh"
         # return r
-        return HttpResponseRedirect(reverse_lazy("TheWitcher:character-recipe-list", kwargs={"character_pk": character_id, "recipe_pk": recipe_id}))
+        return HttpResponseRedirect(reverse_lazy("TheWitcher:character-recipe-detail", kwargs={"character_pk": character_id, "pk": recipe_id}))

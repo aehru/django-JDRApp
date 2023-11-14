@@ -1,5 +1,6 @@
 {% extends "TheWitcher/base.html" %}
-{% block body %}
+{% block content %}
+<section class="container">
     <h1>Known Recipes</h1>
     {% if recipes %}
         {% csrf_token %}
@@ -9,4 +10,5 @@
     {% else %}
         <p>You don't know any recipe... yet</p>
     {% endif %}
+</section>
 {% endblock %}

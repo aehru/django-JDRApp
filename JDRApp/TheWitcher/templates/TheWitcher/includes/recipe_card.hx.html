@@ -6,12 +6,13 @@
         <form 
             hx-post="{% url 'TheWitcher:use-recipe' character_pk=character_pk recipe_pk=recipe.pk %}"
             hx-target="#recipe-card-{{ recipe.pk }}"
+            hx-swap="outerHTML"
             >
             {% csrf_token %}
             <button 
                 class="btn btn-primary"
                 >
-                <i class="fa-solid fa-flask"></i>
+                <i class="fa-solid fa-flask">+</i>
             </button>
         </form>
         {%  endif %}

@@ -1,8 +1,9 @@
 from django.urls import path
-from TheWitcher.views import CampaignCreateView, CharacterCreateView, CharacterInventoryListView
+from TheWitcher.views import CampaignCreateView, CharacterCreateView, CharacterDetailView, CharacterInventoryListView
 from TheWitcher.views import AddToInventoryView, EditInventoryEntryView
 from TheWitcher.views import IngredientListView
 from TheWitcher.views import CharacterRecipeListView, CharacterRecipeDetailView, CharacterRecipeIngredientListView, UseRecipeView
+from TheWitcher.views import CharacterCharacteristicListView, CharacterSkillListView
 from TheWitcher.views import CraftRecipeIngredientListView
 from TheWitcher.views import RecipeDetailView
 
@@ -12,9 +13,12 @@ urlpatterns = [
     path("campaigns/<int:pk>/characters/add", CharacterCreateView.as_view(), name="character-add"),
     path("ingredient/list", IngredientListView.as_view(), name="ingredient-list"),
     
+    path("character/<int:pk>", CharacterDetailView.as_view(), name="character-detail"),
     path("character/<int:pk>/inventory", CharacterInventoryListView.as_view(), name="character-inventory"),
     path("character/<int:character_pk>/inventory/add", AddToInventoryView.as_view(), name="add-to-inventory"),
     path("character/<int:character_pk>/inventory/edit/<int:pk>", EditInventoryEntryView.as_view(), name="edit-inventory-entry"),
+    path("character/<int:pk>/characteristic", CharacterCharacteristicListView.as_view(), name="character-characteristic"),
+    path("character/<int:pk>/skills", CharacterSkillListView.as_view(), name="character-skill"),
 
     path("character/<int:character_pk>/recipes", CharacterRecipeListView.as_view(), name="character-recipe-list"),
     path("character/<int:character_pk>/recipes/<int:pk>/", CharacterRecipeDetailView.as_view(), name="character-recipe-detail"),
