@@ -1,10 +1,10 @@
 from typing import Any
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView
 from django.views.generic.edit import FormView
-from .forms import InventoryAddForm, InventoryEditForm
+from .forms import CharacterRecipeLearnForm, InventoryAddForm, InventoryEditForm
 from .functions import get_total_quantity_of_substance_in_character_inventory, is_htmx_request, add_to_character_inventory, remove_from_character_inventory, remove_substances_from_character_inventory
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
@@ -16,6 +16,58 @@ from .models import AlchemyRecipe, AlchemyRecipeIngredient, Character, Character
 class CampaignCreateView(CreateView):
     model = Campaign
     fields = ["name", "universe"]
+
+
+class RecipeListView(ListView):
+    model = Recipe
+    context_object_name = "recipes"
+
+class RecipeToLearnListView(ListView):
+    model = Recipe
+    context_object_name = "recipes"
+    template_name = "TheWitcher/recipe_list.html"
+
+    def get_template_names(self) -> list[str]:
+        if is_htmx_request(self.request):
+            return ["TheWitcher/includes/recipe_list.hx.html"]
+        else:
+            return super().get_template_names()
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        character = get_object_or_404(Character, pk=self.kwargs["character_pk"])
+        character_recipes = CharacterRecipe.objects.filter(character=character).values_list("recipe", flat=True)
+        context["recipes"] = Recipe.objects.exclude(pk__in=character_recipes)
+        context["character_pk"] = self.kwargs["character_pk"]
+        context["learn"] = True
+        return context
+
+class LearnRecipe(FormView):
+    template_name = "TheWitcher/recipe_list.html"
+    form_class = InventoryAddForm
+
+    def get_template_names(self) -> list[str]:
+        if is_htmx_request(self.request):
+            return ["TheWitcher/includes/recipe_list.hx.html"]
+        else:
+            return super().get_template_names()
+    
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["recipes"] = Recipe.objects.all()
+        context["character_pk"] = self.kwargs["character_pk"]
+        return context
+    
+    def post(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
+        RecipeToLearn = get_object_or_404(Recipe, pk=self.kwargs["recipe_pk"])
+        character = get_object_or_404(Character, pk=self.kwargs["character_pk"])
+        if CharacterRecipe.objects.filter(character=character, recipe=RecipeToLearn).exists():
+            raise ValueError(f"{character} already knows {RecipeToLearn}")
+        
+        CharacterRecipe.objects.create(character=character, recipe=RecipeToLearn)
+        r = HttpResponseRedirect(reverse_lazy("TheWitcher:character-recipes-to-learn", kwargs={"character_pk": self.kwargs["character_pk"]}))        
+        r["HX-Trigger"] = "character-known-recipes-refresh"
+        return r
 
 class CharacterCreateView(CreateView):
     model = Character
@@ -54,7 +106,7 @@ class CharacterInventoryListView(ListView):
 
 class AddToInventoryView(FormView):
     template_name = "TheWitcher/add_to_inventory.html"
-    form_class = InventoryAddForm
+    form_class = CharacterRecipeLearnForm
 
     def get_template_names(self) -> list[str]:
         if is_htmx_request(self.request):
@@ -105,15 +157,16 @@ class CharacterRecipeListView(ListView):
     model = CharacterRecipe
     context_object_name = "recipes"
 
-    # def get_template_names(self) -> list[str]:
-    #     if is_htmx_request(self.request):
-    #         return ["TheWitcher/includes/characterrecipe_list.hx.html"]
-    #     else:
-    #         return super().get_template_names()
+    def get_template_names(self) -> list[str]:
+        if is_htmx_request(self.request):
+            return ["TheWitcher/includes/characterrecipe_list.hx.html"]
+        else:
+            return super().get_template_names()
         
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         character_id = self.kwargs["character_pk"]
+        context["recipes"] = CharacterRecipe.objects.filter(character=character_id)
         crafted_items = {}
         for item in self.object_list:
             item_crafted:CharacterInventory = CharacterInventory.objects.filter(character=character_id, item=item.recipe.item_crafted).first()
@@ -213,6 +266,7 @@ class CraftRecipeIngredientListView(DetailView):
             context["ingredients"] = CraftRecipeIngredient.objects.filter(recipe=self.get_object())
         
         return context
+
 
 class CharacterRecipeIngredientListView(ListView):
     """

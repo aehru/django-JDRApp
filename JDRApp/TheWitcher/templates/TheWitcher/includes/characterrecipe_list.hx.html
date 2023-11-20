@@ -1,0 +1,8 @@
+{% if recipes %}
+{% csrf_token %}
+{% for recipe in recipes %}
+    {% include "TheWitcher/includes/recipe_card.hx.html" with recipe=recipe.recipe %}
+{% endfor %}
+{% else %}
+<p>You don't know any recipe... yet</p>
+{% endif %}

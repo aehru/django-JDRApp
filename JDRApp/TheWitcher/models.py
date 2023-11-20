@@ -16,6 +16,14 @@ ALCHEMICAL_SUBSTANCE = (
     ('quebrith', 'Quebrith'),
 )
 
+ITEM_CATEGORY = (
+    ("alchemy_ingredient", "Alchemy Ingredient"),
+    ("craft_material", "Craft Material"),
+    ("animals", "Animals"),
+    ("alchemy_treatment", "Alchemy Treatment"),
+    ("minerals", "Minerals"),
+)
+
 RECIPE_LEVEL = (
     ('novice', 'Novice'),
     ('journeyman', 'Journeyman'),
@@ -49,6 +57,7 @@ class Item(models.Model):
     weight = models.FloatField() #in kg
     location = models.CharField(max_length=80)
 
+    category = models.CharField(max_length=20, choices=ITEM_CATEGORY)
     substance = models.ForeignKey(AlchemicalSubstance, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self) -> str:

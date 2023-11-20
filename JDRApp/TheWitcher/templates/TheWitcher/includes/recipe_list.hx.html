@@ -1,0 +1,7 @@
+{% if recipes %}
+    {% for recipe in recipes %}
+    {% include "TheWitcher/includes/recipe_card.hx.html" %}
+    {% endfor %}
+{% else %}
+    No recipes right there...
+{% endif %}

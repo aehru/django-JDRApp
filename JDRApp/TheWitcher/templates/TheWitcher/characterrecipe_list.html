@@ -2,13 +2,23 @@
 {% block content %}
 <section class="container">
     <h1>Known Recipes</h1>
-    {% if recipes %}
-        {% csrf_token %}
-        {% for recipe in recipes %}
-            {% include "TheWitcher/includes/recipe_card.hx.html" with recipe=recipe.recipe %}
-        {% endfor %}
-    {% else %}
-        <p>You don't know any recipe... yet</p>
-    {% endif %}
+    <article id="known-recipes" class="d-flex" hx-get="{% url 'TheWitcher:character-recipe-list' character_pk %}" hx-trigger="character-known-recipes-refresh">
+    {% include 'TheWitcher/includes/characterrecipe_list.hx.html' %}
+    </article>
+    
+    <hr>
+
+    <article id="form-recipe" class="mt-2" >
+        <div class="text-center">
+            <button class="btn btn-outline-primary" hx-get="{% url 'TheWitcher:character-recipes-to-learn' character_pk %}" hx-target="#form-recipe">
+                Learn a new recipe <span class="mdi mdi-name"></span>
+            </button>
+        </div>
+    </article>
 </section>
+<script>
+    document.getElementById("form-recipe").addEventListener("htmx:afterSwap", function (event) {
+        htmx.trigger("#known-recipes", "character-known-recipes-refresh");
+    });
+</script>
 {% endblock %}
