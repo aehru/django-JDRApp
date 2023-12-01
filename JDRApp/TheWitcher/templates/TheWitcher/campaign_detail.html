@@ -1,0 +1,9 @@
+{% extends "TheWitcher/base.html" %}
+{% load static %}
+{% block content %}
+<section class="container">
+{% for character in campaign.character_set.all %}
+<a href="{% url "TheWitcher:character-detail" character.pk %}">{{ character }}</a>
+{% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "TheWitcher/base.html" %}
+{% block nav %}
+<nav class="navbar fixed-bottom bg-body-secondary">
+    <div class="container-fluid justify-content-center">
+        {% comment %} <a class="navbar-brand" href="#">Fixed bottom</a> {% endcomment %}
+        <ul class="nav nav-pills">
+            {% url 'TheWitcher:character-detail' character_pk as url_character %}
+            <li class="nav-item">
+              <a class="nav-link {% if request.path == url_character %}active{% endif %}" href="{{ url_character }}">
+                <i class="fa-solid fa-user"></i>
+              </a>
+            </li>
+            {% url 'TheWitcher:character-recipe-list' character_pk as url_known_recipes %}
+            <li class="nav-item">
+              <a class="nav-link {% if request.path == url_known_recipes %}active{% endif %}" href="{{ url_known_recipes }}">
+                <i class="fa-solid fa-scroll"></i>
+              </a>
+            </li>
+            {% url 'TheWitcher:character-inventory' character_pk as url_inventory %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.path == url_inventory %}active{% endif %}" href="{{ url_inventory }}">
+                    <i class="fa-solid fa-bag-shopping"></i>
+                </a>
+            </li>
+            {% url 'TheWitcher:character-characteristic' character_pk as url_characteristic %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.path == url_characteristic %}active{% endif %}" href="{{ url_characteristic }}">
+                    <i class="fa-solid fa-rectangle-list"></i>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+{% endblock %}
+```

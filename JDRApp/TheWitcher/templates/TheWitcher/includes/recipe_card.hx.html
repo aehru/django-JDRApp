@@ -1,5 +1,5 @@
 {% load common_tags %}
-<div id="recipe-card-{{ recipe.pk }}" class="card m-2" style="max-width: 18rem;">
+<div id="recipe-card-{{ recipe.pk }}" class="card m-2" style="max-width: 18rem; min-width: 200px;">
     <div class="card-header d-flex justify-content-between align-items-center">
         {{ recipe.name }}
         {% if character_pk %}
@@ -39,17 +39,20 @@
             <span class=""> x{{ crafted_items_inventory_quantities|dict_key:recipe.item_crafted.pk }}</span>
             {% endif %}
         </h5>
+        {% for i in recipe.ingredients.all %}
+        {{ i }}
+        {% endfor %}
         <ul 
-            class="card-text placeholder-wave list-unstyled list-group"
+            class="card-text list-unstyled list-group"
             hx-get="{% url 'TheWitcher:recipe-ingredient-list' recipe.pk %}"
             hx-trigger="load delay:.5s">
             <li class="list-group-item d-flex justify-content-between align-items-start">
-                <span class="placeholder col-10"></span>
-                <span class="placeholder col-1"></span>
+                <span class="placeholder placeholder-wave col-10"></span>
+                <span class="placeholder placeholder-wave col-1"></span>
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-start">
-                <span class="placeholder col-10"></span>
-                <span class="placeholder col-1"></span>
+                <span class="placeholder placeholder-wave col-10"></span>
+                <span class="placeholder placeholder-wave col-1"></span>
             </li>
         </ul>
     </div>

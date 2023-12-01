@@ -13,10 +13,20 @@ from django.utils.decorators import method_decorator
 from dashboard.models import Campaign
 from .models import AlchemyRecipe, AlchemyRecipeIngredient, Character, CharacterCharacteristic, CharacterInventory, CharacterRecipe, CharacterSkill, Item, Recipe, CraftRecipe, CraftRecipeIngredient
 
+from django.contrib.auth.forms import UserCreationForm
+class AuthenticationView(FormView):
+    template_name = "TheWitcher/login.html"
+    form_class = UserCreationForm
+
 class CampaignCreateView(CreateView):
     model = Campaign
     fields = ["name", "universe"]
 
+
+class CampaignDetailView(DetailView):
+    model = Campaign
+    context_object_name = "campaign"
+    template_name = "TheWitcher/campaign_detail.html"
 
 class RecipeListView(ListView):
     model = Recipe
@@ -77,6 +87,11 @@ class CharacterCreateView(CreateView):
 class CharacterDetailView(DetailView):
     model = Character
     context_object_name = "character"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["character_pk"] = self.kwargs["pk"]
+        return context
 
 class IngredientListView(ListView):
     model = Item

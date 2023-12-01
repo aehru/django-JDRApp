@@ -1,5 +1,5 @@
 from django.urls import path
-from TheWitcher.views import CampaignCreateView, CharacterCreateView, CharacterDetailView, CharacterInventoryListView
+from TheWitcher.views import AuthenticationView, CampaignCreateView, CampaignDetailView, CharacterCreateView, CharacterDetailView, CharacterInventoryListView
 from TheWitcher.views import AddToInventoryView, EditInventoryEntryView
 from TheWitcher.views import IngredientListView
 from TheWitcher.views import CharacterRecipeListView, CharacterRecipeDetailView, CharacterRecipeIngredientListView, UseRecipeView
@@ -9,6 +9,9 @@ from TheWitcher.views import RecipeListView, RecipeDetailView, LearnRecipe, Reci
 
 app_name = 'TheWitcher'
 urlpatterns = [
+
+    path("campaign/<int:pk>", CampaignDetailView.as_view(), name="campaign-detail"),
+
     # path("campaigns/add", CampaignCreateView.as_view(), name="campaign-add"),
     path("campaigns/<int:pk>/characters/add", CharacterCreateView.as_view(), name="character-add"),
     path("ingredient/list", IngredientListView.as_view(), name="ingredient-list"),

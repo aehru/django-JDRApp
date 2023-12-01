@@ -1,6 +1,10 @@
-{% extends "TheWitcher/base.html" %}
+{% extends "TheWitcher/base.character.html" %}
 {% block title %}{{ object.name }}{% endblock %}
 {% block content %}
-<h1>{{ object.name }}</h1>
+<section class="container">
+    <h1>{{ object.name }}</h1>
+    <div><i class="fa-solid fa-money-bill"></i> {{ object.money }}</div>
+    <div><i class="fa-solid fa-xp">XP</i> {{ object.xp }}</div>
+</section>
 {% endblock %}
 ```

@@ -1,4 +1,4 @@
-{% extends "TheWitcher/base.html" %}
+{% extends "TheWitcher/base.character.html" %}
 {% block content %}
 <section class="container">
     <h1>Known Recipes</h1>
@@ -8,7 +8,7 @@
     
     <hr>
 
-    <article id="form-recipe" class="mt-2" >
+    <article id="form-recipe" class="mt-2 d-flex flex-wrap justify-content-evenly" >
         <div class="text-center">
             <button class="btn btn-outline-primary" hx-get="{% url 'TheWitcher:character-recipes-to-learn' character_pk %}" hx-target="#form-recipe">
                 Learn a new recipe <span class="mdi mdi-name"></span>

@@ -33,6 +33,7 @@ RECIPE_LEVEL = (
 
 RECIPE_CATEGORY = (
     ('formula', 'Alchemy'),
+    ('ingredient', 'Ingredient'),
     ('armor', 'Armor'),
     ('weapon', 'Weapon'),
 )
@@ -73,7 +74,10 @@ class Recipe(models.Model):
     """
     name = models.CharField(max_length=50, unique=True)
     level = models.CharField(max_length=20, choices=RECIPE_LEVEL)
+    difficulty = models.PositiveIntegerField()
     duration = models.PositiveIntegerField() #in minutes
+    investment = models.PositiveIntegerField() #in crowns
+    price = models.PositiveIntegerField() #in crowns
     item_crafted = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="item_crafted_by_recipe") # if abstract requires : %(app_label)s_%(class)s_related
     category = models.CharField(max_length=20, choices=RECIPE_CATEGORY)
 
@@ -91,10 +95,16 @@ class CraftRecipe(Recipe):
     ingredients = models.ManyToManyField(Item, through='CraftRecipeIngredient', related_name='ingredient_for_recipe')
 
     def clean(self) -> None:
-        allowed_categories = ["armor", "weapon"]
+        allowed_categories = ["armor", "weapon", "ingredient"]
         if self.category not in allowed_categories:
             raise ValueError(f"Category must be one of {allowed_categories}")
         return super().clean()
+    
+    def __str__(self) -> str:
+        if self.category == "ingredient":
+            return f"Schéma de {self.name}"
+        else:
+            return super().__str__()
 
 
 class CraftRecipeIngredient(models.Model):
@@ -148,12 +158,10 @@ class Skill(models.Model):
 
 class Character(Character):
     money = models.FloatField(default=0)
+    xp = models.PositiveIntegerField(default=0)
 
     characteristics = models.ManyToManyField(Characteristic, through='CharacterCharacteristic', related_name='characteristic_for_character')
     skills = models.ManyToManyField(Skill, through='CharacterSkill', related_name='skill_for_character')
-
-    def __str__(self) -> str:
-        return f"{self.player}'s '{self.name}' from {self.campaign}"
     
     def save(self) -> None:
         # When saving a new Character we need to create all the CharacterCharacteristics and CharacterSkills
