@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from django.db import models
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.urls import reverse
 from dashboard.models import Character
 
 ALCHEMICAL_SUBSTANCE = (
@@ -17,11 +18,14 @@ ALCHEMICAL_SUBSTANCE = (
 )
 
 ITEM_CATEGORY = (
-    ("alchemy_ingredient", "Alchemy Ingredient"),
+    ("alchemy_ingredient", "Alchemy Ingredient"), # Alchemy compounds
     ("craft_material", "Craft Material"),
     ("animals", "Animals"),
     ("alchemy_treatment", "Alchemy Treatment"),
     ("minerals", "Minerals"),
+    ("alchemy_potion", "Potion"),
+    ("weapon", "Weapon"),
+    ("armor", "Armor"),
 )
 
 RECIPE_LEVEL = (
@@ -56,7 +60,9 @@ class Item(models.Model):
     difficulty = models.PositiveIntegerField()
     price = models.PositiveIntegerField() #in crowns
     weight = models.FloatField() #in kg
-    location = models.CharField(max_length=80)
+    location = models.CharField(max_length=80, null=True, blank=True)
+
+    description = models.TextField(null=True, blank=True)
 
     category = models.CharField(max_length=20, choices=ITEM_CATEGORY)
     substance = models.ForeignKey(AlchemicalSubstance, on_delete=models.CASCADE, null=True, blank=True)
@@ -84,6 +90,9 @@ class Recipe(models.Model):
     def __str__(self) -> str:
         return f"{self.name} - {self.level} - {self.duration} minutes - {self.item_crafted.name}"
 
+    def get_absolute_url(self):
+        return reverse("TheWitcher:recipe-detail", kwargs={"pk": self.pk})
+    
     # class Meta:
     #     abstract = True
 

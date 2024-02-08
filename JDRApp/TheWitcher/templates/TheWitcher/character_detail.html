@@ -3,8 +3,12 @@
 {% block content %}
 <section class="container">
     <h1>{{ object.name }}</h1>
-    <div><i class="fa-solid fa-money-bill"></i> {{ object.money }}</div>
-    <div><i class="fa-solid fa-xp">XP</i> {{ object.xp }}</div>
+    <div id="money-wrapper" class="input-group">
+        {% include "TheWitcher/includes/character_money_form.hx.html" %}
+    </div>
+    <div id="xp-wrapper" class="input-group">
+        {% include "TheWitcher/includes/character_xp_form.hx.html" %}
+    </div>
 </section>
 {% endblock %}
 ```

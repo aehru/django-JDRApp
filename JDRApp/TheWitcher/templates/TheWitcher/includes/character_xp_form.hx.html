@@ -1,0 +1,14 @@
+<form 
+    hx-post="{% url 'TheWitcher:character-update-xp' object.pk %}" 
+    hx-target="#xp-wrapper" 
+    x-data="{ open: false }">
+    {% csrf_token %}
+    <button type="button" class="btn btn-outline-primary" @click="open = !open">
+        <i class="fa-solid fa-xp">XP</i> {{ object.xp }}
+    </button>
+    <span x-show="open" x-transition>
+        <button type="submit" class="btn btn-secondary" value="add" name="operation"><i class="fas fa-add"></i></button>
+        <button type="submit" class="btn btn-secondary" value="substract" name="operation"><i class="fas fa-minus"></i></button>
+        <input type="number" name="xp" id="xp" value="10" size="2">
+    </span>
+</form>

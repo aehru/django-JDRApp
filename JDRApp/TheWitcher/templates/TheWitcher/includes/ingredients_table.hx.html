@@ -1,0 +1,16 @@
+{% for ingredient in ingredients %}
+<tr>
+    <td>{{ ingredient.name }}</td>
+    <td>{{ ingredient.location }}</td>
+    <td>
+        <input type="number" name="quantity_{{ ingredient.pk }}" value="1" min="1" max="99" />
+    </td>
+    <td>
+        <button 
+        type="submit" 
+        name="add_ingredient" 
+        value="{{ ingredient.pk }}"
+        class="btn btn-secondary">+</button>
+    </td>
+</tr>
+{% endfor %}

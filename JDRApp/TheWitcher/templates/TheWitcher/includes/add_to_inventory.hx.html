@@ -1,33 +1,54 @@
 <form hx-post="{% url 'TheWitcher:add-to-inventory' character.pk %}">
-    <div class="input-group mb-3">
-        <input type="text" class="form-control" placeholder="Recipient's username" aria-label="Recipient's username" aria-describedby="button-addon2">
-        <button class="btn btn-outline-secondary" type="button" id="button-addon2">search</button>
-    </div>
     {% csrf_token %}
-    <table class="table table-striped">
+    <div class="input-group mb-3">
+        <input 
+            id="search" 
+            onkeyup="SearchInTable();" 
+            type="text" 
+            class="form-control" 
+            name="search" 
+            value="{{ search }}"
+            placeholder="Ingredient" aria-label="Ingredient" aria-describedby="button-addon2">
+    </div>
+    <table id="myTable" class="table table-striped">
         <thead>
             <tr>
                 <th>Ingredient</th>
+                <th>Location</th>
                 <th>Quantity</th>
                 <th>Add</th>
             </tr>
-        </thead>
-        <tbody>
-            {% for ingredient in ingredients %}
             <tr>
-                <td>{{ ingredient.name }}</td>
-                <td>
-                    <input type="number" name="quantity_{{ ingredient.pk }}" value="1" min="1" max="99" />
-                </td>
-                <td>
-                    <button 
-                    type="submit" 
-                    name="add_ingredient" 
-                    value="{{ ingredient.pk }}"
-                    class="btn btn-secondary">+</button>
-                </td>
-            </tr>
-            {% endfor %}
+        </thead>
+        <tbody id="ingredient-to-add-list">
+            {% include "TheWitcher/includes/ingredients_table.hx.html" %}
         </tbody>
     </table>
 </form>
+
+<script>
+    function SearchInTable() {
+      // Declare variables
+      var input, filter, table, tr, td, i, txtValue;
+      input = document.getElementById("search");
+      filter = input.value.toUpperCase();
+      table = document.getElementById("myTable");
+      tr = table.getElementsByTagName("tr");
+    
+      // Loop through all table rows, and hide those who don't match the search query
+      for (i = 0; i < tr.length; i++) {
+        td = tr[i].getElementsByTagName("td")[0]
+        td2 = tr[i].getElementsByTagName("td")[1];
+        if (td || td2) {
+          txtValue = td.textContent || td.innerText;
+          txtValue += td2.textContent || td2.innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            tr[i].style.display = "";
+          } else {
+            tr[i].style.display = "none";
+          }
+        }
+      }
+    }
+    body.addEventListener("load", SearchInTable());
+</script>

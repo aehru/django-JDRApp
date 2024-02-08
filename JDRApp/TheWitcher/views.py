@@ -1,10 +1,16 @@
+import json
 from typing import Any
+from django import forms
+from django.db.models.query import QuerySet, Q
+from django.forms import formset_factory, inlineformset_factory
+from django.forms.models import BaseModelForm
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
+from django.views import View
 from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView
 from django.views.generic.edit import FormView
-from .forms import CharacterRecipeLearnForm, InventoryAddForm, InventoryEditForm
+from .forms import AlchemyRecipeIngredientForm, CharacterRecipeLearnForm, CraftRecipeIngredientForm, InventoryAddForm, InventoryEditForm
 from .functions import get_total_quantity_of_substance_in_character_inventory, is_htmx_request, add_to_character_inventory, remove_from_character_inventory, remove_substances_from_character_inventory
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
@@ -79,9 +85,121 @@ class LearnRecipe(FormView):
         r["HX-Trigger"] = "character-known-recipes-refresh"
         return r
 
+
+class CraftRecipeCreateView(CreateView):
+    model = CraftRecipe
+    fields = [
+        "name", "level", "difficulty", "duration", 
+        "investment", "price", "item_crafted", "category"
+        ]
+    widgets = {
+        "name": forms.TextInput(attrs={"class": "form-control"}),
+        "level": forms.NumberInput(attrs={"class": "form-control"}),
+    }
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        ingredients_formset = formset_factory(CraftRecipeIngredientForm)(self.request.POST or None) #formset_factory(CraftRecipe, CraftRecipeIngredient, fields=("ingredient", "quantity"), extra=1)
+        context["ingredients_formset"] = ingredients_formset
+        return context
+    
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        context = self.get_context_data()
+        ingredients = context["ingredients_formset"]
+        with transaction.atomic():
+            self.object = form.save()
+            if ingredients.is_valid():
+                for f in ingredients:
+                    i = f.save(commit=False)
+                    i.recipe = self.object
+                    i.save()
+
+        return super().form_valid(form)
+
+
+class ALchemyRecipeCreateView(CreateView):
+    model = AlchemyRecipe
+    fields = [
+        "name", "level", "difficulty", "duration", 
+        "investment", "price", "item_crafted"
+        ]
+    widgets = {
+    }
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        ingredients_formset = formset_factory(AlchemyRecipeIngredientForm)(self.request.POST or None)
+        context["ingredients_formset"] = ingredients_formset
+        return context
+    
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        context = self.get_context_data()
+        ingredients = context["ingredients_formset"]
+        with transaction.atomic():
+            if ingredients.is_valid():
+                ingredients_data = ingredients.cleaned_data
+                ingredients_list = [ingredient['substance'] for ingredient in ingredients_data]
+                if len(ingredients_list) != len(set(ingredients_list)):
+                    form.add_error(None, "Duplicate ingredients are not allowed.")
+                    return self.form_invalid(form)
+                self.object = form.save()
+                for f in ingredients:
+                    i = f.save(commit=False)
+                    i.recipe = self.object
+                    i.save()
+
+        return super().form_valid(form)
+
+    def clean_category(self) -> str:
+        return "formula"
+
 class CharacterCreateView(CreateView):
     model = Character
-    fields = ["name", "reflex", "dexterity"]
+    fields = ["name", "money", "xp"]
+
+
+class CharacterUpdateMoneyView(View):
+    model = Character
+    # fields = ["money"]
+    template_name = "TheWitcher/includes/character_money_form.hx.html"
+
+    def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
+        char:Character = get_object_or_404(Character, pk=kwargs["pk"])
+        context = {"object": char }
+        return render(request, self.template_name, context=context)
+                      
+    def post(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
+        if 'money' in request.POST and 'operation' in request.POST:
+            char:Character = get_object_or_404(Character, pk=kwargs["pk"])
+            if request.POST.get("operation") == "add":  # Check if operation is "add"
+                char.money += float(request.POST.get("money"))
+            else:
+                char.money -= float(request.POST.get("money"))
+            char.save()
+
+        return HttpResponseRedirect(reverse_lazy("TheWitcher:character-update-money", kwargs={"pk": self.kwargs["pk"]}))
+
+
+class CharacterUpdateXPView(View):
+    model = Character
+    # fields = ["money"]
+    template_name = "TheWitcher/includes/character_xp_form.hx.html"
+
+    def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
+        char:Character = get_object_or_404(Character, pk=kwargs["pk"])
+        context = {"object": char }
+        return render(request, self.template_name, context=context)
+                      
+    def post(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
+        if 'xp' in request.POST and 'operation' in request.POST:
+            char:Character = get_object_or_404(Character, pk=kwargs["pk"])
+            if request.POST.get("operation") == "add":  # Check if operation is "add"
+                char.xp += float(request.POST.get("xp"))
+            else:
+                char.xp -= float(request.POST.get("xp"))
+            char.save()
+
+        return HttpResponseRedirect(reverse_lazy("TheWitcher:character-update-xp", kwargs={"pk": self.kwargs["pk"]}))
 
 
 class CharacterDetailView(DetailView):
@@ -112,6 +230,7 @@ class CharacterInventoryListView(ListView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["character_pk"] = self.kwargs["pk"]
+        context["character"] = get_object_or_404(Character, pk=self.kwargs["pk"])
         return context
 
 # class AddToInventoryView(CreateView):
@@ -133,7 +252,12 @@ class AddToInventoryView(FormView):
         context = super().get_context_data(**kwargs)
         character_id = self.kwargs["character_pk"]
         context["character"] = Character.objects.get(pk=character_id)
-        context["ingredients"] = Item.objects.all()
+        items = Item.objects.all()
+        if self.request.POST.get("search"):
+            s = self.request.POST.get("search")
+            context["search"] = s
+            items = items.filter(Q(name__icontains=s))
+        context["ingredients"] = items
 
         # Add the current quantity of each ingredient in the character's inventory
         character_inventory = CharacterInventory.objects.filter(character=character_id)
@@ -154,10 +278,29 @@ class AddToInventoryView(FormView):
         
         add_to_character_inventory(character, ingredient, quantity)
 
-        r = redirect(request.path)
+        r = super().post(request, *args, **kwargs)
+        # r = redirect(request.path)
         
         r["HX-Trigger"] = "character-inventory-refresh"
         return r
+
+
+class ItemsToAddToInventoryListView(ListView):
+    model = Item
+    context_object_name = "ingredients"
+
+    def get_template_names(self) -> list[str]:
+        if is_htmx_request(self.request):
+            return [ "TheWitcher/includes/ingredients_table.hx.html" ]
+        else:
+            return super().get_template_names()
+        
+    def get_queryset(self) -> QuerySet[Any]:
+        q = super().get_queryset()
+        if self.request.GET.get("ingredient-to-search"):
+            q = q.filter(Q(name__icontains=self.request.GET.get("ingredient-to-search")))
+        
+        return q
 
 class EditInventoryEntryView(UpdateView):
     model = CharacterInventory
@@ -248,6 +391,14 @@ class CharacterSkillListView(ListView):
         context["character_characteristics"] = CharacterCharacteristic.objects.filter(character=self.kwargs["pk"]).values_list(*fields)
         return context
 
+
+class CharacterUpdateView(UpdateView):
+    model = Character
+    fields = ["money", "xp"]
+    template_name = "TheWitcher/character_update.html"
+
+    def get_success_url(self) -> str:
+        return reverse_lazy("TheWitcher:character-detail", kwargs={"pk": self.kwargs["pk"]})
 
 class CraftRecipeIngredientListView(DetailView):
     """

@@ -1,0 +1,70 @@
+{% extends "TheWitcher/base.html" %}
+{% block content %}
+{{ form.errors }}
+<form method="POST">
+{% csrf_token %}
+<label 
+class="form-label" 
+for="{{ form.name.id_for_label }}">
+{{ form.name.label }}
+</label>
+{{ form.name }}
+
+
+{{ form.level.as_field_group }}
+
+{{ form.difficulty.as_field_group }}
+
+{{ form.item_crafted.as_field_group }}
+{{ form.duration.as_field_group }}
+{{ form.investment.as_field_group }}
+{{ form.price.as_field_group }}
+
+<div id="ingredients-formset">
+    {{ ingredients_formset.management_form }}
+    {% for form in ingredients_formset %}
+        <div class="ingredient-form">
+            {{ form.as_p }}
+        </div>
+    {% endfor %}
+    <div id="empty-form" style="display:none;">
+        {{ ingredients_formset.empty_form.as_p }}
+    </div>
+</div>
+
+<button type="submit">Submit</button>
+</form>
+<button id="add-form">Add</button>
+<button id="remove-form">Remove</button>
+
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const ingredientsFormset = document.querySelector('#ingredients-formset');
+        const emptyForm = document.querySelector('#empty-form').outerHTML;
+        const addFormButton = document.querySelector('#add-form');
+        const removeFormButton = document.querySelector('#remove-form');
+    
+        addFormButton.addEventListener('click', (event) => {
+            event.preventDefault();
+    
+            const totalForms = document.querySelector('#id_form-TOTAL_FORMS');
+            const formIdx = totalForms.value;
+    
+            const newForm = emptyForm.replace(/__prefix__/g, formIdx).replace('id="empty-form" style="display:none;"', '');
+            ingredientsFormset.insertAdjacentHTML('beforeend', newForm);
+    
+            totalForms.value++;
+        });
+    
+        removeFormButton.addEventListener('click', (event) => {
+            event.preventDefault();
+    
+            const totalForms = document.querySelector('#id_form-TOTAL_FORMS');
+            if (totalForms.value > 1) {
+                ingredientsFormset.lastElementChild.remove();
+                totalForms.value--;
+            }
+        });
+    });
+</script>
+{% endblock %}
