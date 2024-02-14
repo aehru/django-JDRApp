@@ -29,6 +29,7 @@ urlpatterns = [
 
     path("characters/<int:character_pk>/recipes", CharacterRecipeListView.as_view(), name="character-recipe-list"),
     path("characters/<int:character_pk>/recipes-to-learn", RecipeToLearnListView.as_view(), name="character-recipes-to-learn"),
+    path("characters/<int:character_pk>/recipes-to-learn/<str:category>", RecipeToLearnListView.as_view(), name="character-recipes-to-learn-categorised"),
     path("characters/<int:character_pk>/recipe/<int:recipe_pk>/learn", LearnRecipe.as_view(), name="character-learn-recipe"),
     path("characters/<int:character_pk>/recipes/<int:pk>/", CharacterRecipeDetailView.as_view(), name="character-recipe-detail"),
     path("characters/<int:character_pk>/recipes/<int:recipe_pk>/make", UseRecipeView.as_view(), name="use-recipe"),

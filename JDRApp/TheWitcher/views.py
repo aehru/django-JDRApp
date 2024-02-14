@@ -53,7 +53,10 @@ class RecipeToLearnListView(ListView):
         context = super().get_context_data(**kwargs)
         character = get_object_or_404(Character, pk=self.kwargs["character_pk"])
         character_recipes = CharacterRecipe.objects.filter(character=character).values_list("recipe", flat=True)
-        context["recipes"] = Recipe.objects.exclude(pk__in=character_recipes)
+        if "category" in self.kwargs:
+            context["recipes"] = Recipe.objects.filter(category=self.kwargs["category"]).exclude(pk__in=character_recipes)
+        else:
+            context["recipes"] = Recipe.objects.exclude(pk__in=character_recipes)
         context["character_pk"] = self.kwargs["character_pk"]
         context["learn"] = True
         return context
